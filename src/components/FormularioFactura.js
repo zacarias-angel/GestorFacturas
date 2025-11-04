@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, TextInput, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, Text, Card } from 'react-native-paper';
 import SelectorProyecto from './SelectorProyecto';
 import CapturaImagen from './CapturaImagen';
@@ -109,12 +109,22 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text style={styles.titulo}>
-            {facturaInicial ? 'Editar Factura' : 'Nueva Factura'}
-          </Text>
+    <KeyboardAvoidingView 
+      style={styles.keyboardView} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
+      >
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.titulo}>
+              {facturaInicial ? 'Editar Factura' : 'Nueva Factura'}
+            </Text>
 
           {/* Número de Factura */}
           <View style={styles.campoContainer}>
@@ -260,14 +270,24 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
           </Button>
         </Card.Content>
       </Card>
+      {/* Espacio adicional al final para el scroll */}
+      <View style={{ height: 40 }} />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   card: {
     margin: 16,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, ScrollView, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, ScrollView, Text, SafeAreaView } from 'react-native';
 import { Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -43,20 +43,26 @@ const SelectorProyecto = ({ proyectos = [], proyectoSeleccionado = '', onSelecci
         animationType="slide"
         onRequestClose={closeMenu}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
-          onPress={closeMenu}
-        >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+        <SafeAreaView style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            activeOpacity={1} 
+            onPress={closeMenu}
+          />
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Seleccionar Proyecto</Text>
-              <TouchableOpacity onPress={closeMenu}>
+              <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
                 <MaterialCommunityIcons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.menuList}>
+            <ScrollView 
+              style={styles.menuList}
+              contentContainerStyle={styles.menuListContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
               {/* Opción: Sin proyecto */}
               <TouchableOpacity
                 style={[
@@ -114,9 +120,11 @@ const SelectorProyecto = ({ proyectos = [], proyectoSeleccionado = '', onSelecci
                   </View>
                 ))
               )}
+              {/* Espacio adicional al final */}
+              <View style={{ height: 20 }} />
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -138,28 +146,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
+  modalBackdrop: {
+    flex: 1,
+  },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '70%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '75%',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
+    paddingTop: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
+  closeButton: {
+    padding: 4,
+  },
   menuList: {
-    maxHeight: 400,
+    flexGrow: 0,
+  },
+  menuListContent: {
+    paddingBottom: 20,
   },
   menuItem: {
     flexDirection: 'row',

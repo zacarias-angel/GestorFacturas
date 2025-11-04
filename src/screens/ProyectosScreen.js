@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput, Linking } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput, Linking, SafeAreaView } from 'react-native';
 import { FAB, Card, Button, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { coloresProyecto } from '../models/Proyecto';
@@ -204,37 +204,38 @@ export default function ProyectosScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      {proyectos.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            No hay proyectos aún.{'\n'}¡Crea tu primer proyecto!
-          </Text>
-          <Button 
-            mode="contained" 
-            onPress={() => setVisible(true)}
-            style={styles.emptyButton}
-          >
-            Crear Proyecto
-          </Button>
-        </View>
-      ) : (
-        <FlatList
-          data={proyectos}
-          renderItem={renderProyecto}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          refreshing={loading}
-          onRefresh={cargarProyectos}
-        />
-      )}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {proyectos.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No hay proyectos aún.{'\n'}¡Crea tu primer proyecto!
+            </Text>
+            <Button 
+              mode="contained" 
+              onPress={() => setVisible(true)}
+              style={styles.emptyButton}
+            >
+              Crear Proyecto
+            </Button>
+          </View>
+        ) : (
+          <FlatList
+            data={proyectos}
+            renderItem={renderProyecto}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            refreshing={loading}
+            onRefresh={cargarProyectos}
+          />
+        )}
 
-      <FAB
-        style={styles.fab}
-        icon="plus"
-        onPress={() => setVisible(true)}
-        disabled={loading}
-      />
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => setVisible(true)}
+          disabled={loading}
+        />
 
       {/* Modal para crear proyecto */}
       <Modal
@@ -296,11 +297,16 @@ export default function ProyectosScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

@@ -354,42 +354,90 @@ export const uploadAPI = {
    */
   subirImagen: async (imageUri) => {
     try {
+      console.log('Iniciando subida de imagen:', imageUri);
+      
       // Crear FormData para enviar la imagen
       const formData = new FormData();
       
-      // Obtener el nombre y tipo del archivo
-      const filename = imageUri.split('/').pop();
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      // Obtener el nombre del archivo
+      let filename = imageUri.split('/').pop();
       
+      // Si la URI es de content:// (Android), generar un nombre único
+      if (imageUri.startsWith('content://')) {
+        filename = `factura_${Date.now()}.jpg`;
+      }
+      
+      // Determinar el tipo MIME
+      const match = /\.(\w+)$/.exec(filename);
+      let type = 'image/jpeg'; // Por defecto
+      
+      if (match) {
+        const extension = match[1].toLowerCase();
+        if (extension === 'png') type = 'image/png';
+        else if (extension === 'jpg' || extension === 'jpeg') type = 'image/jpeg';
+        else if (extension === 'gif') type = 'image/gif';
+        else if (extension === 'webp') type = 'image/webp';
+      }
+      
+      console.log('Nombre de archivo:', filename);
+      console.log('Tipo MIME:', type);
+      
+      // Agregar la imagen al FormData
+      // En React Native, FormData acepta objetos con uri, name, type
       formData.append('image', {
         uri: imageUri,
         name: filename,
         type: type,
       });
       
+      console.log('FormData preparado, enviando al servidor...');
+      
       const response = await fetch(`${API_CONFIG.BASE_URL}/upload.php`, {
         method: 'POST',
         body: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // NO establecer Content-Type manualmente cuando se usa FormData
+          // El navegador/React Native lo hará automáticamente con el boundary correcto
+          'Accept': 'application/json',
         },
       });
       
-      const data = await response.json();
+      console.log('Respuesta del servidor:', response.status);
+      
+      const text = await response.text();
+      console.log('Respuesta texto:', text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Error al parsear JSON:', e);
+        throw new ApiError(
+          `Respuesta inválida del servidor: ${text.substring(0, 100)}`,
+          response.status
+        );
+      }
       
       if (!response.ok) {
         throw new ApiError(
-          data?.error || 'Error al subir imagen',
+          data?.error || data?.message || 'Error al subir imagen',
           response.status,
           data
         );
       }
       
+      console.log('Imagen subida exitosamente:', data.url);
       return data.url;
     } catch (error) {
-      console.error('Error al subir imagen:', error);
-      throw error;
+      console.error('Error completo al subir imagen:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        `Error al subir imagen: ${error.message}`,
+        0,
+        { originalError: error }
+      );
     }
   },
 };

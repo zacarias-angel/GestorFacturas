@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, Text } from 'react-native';
+import { View, StyleSheet, Alert, Text, SafeAreaView } from 'react-native';
 import { Button, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import FormularioFactura from '../components/FormularioFactura';
@@ -48,13 +48,15 @@ export default function NuevaFacturaScreen({ navigation }) {
       let imagenUrl = null;
       
       // Si hay una imagen, subirla primero al servidor
-      if (datosFactura.imagenUri && datosFactura.imagenUri.startsWith('file://')) {
+      if (datosFactura.imagenUri) {
         try {
           console.log('Subiendo imagen al servidor...');
+          console.log('URI de imagen:', datosFactura.imagenUri);
           imagenUrl = await apiService.upload.subirImagen(datosFactura.imagenUri);
           console.log('Imagen subida:', imagenUrl);
         } catch (uploadError) {
           console.error('Error al subir imagen:', uploadError);
+          console.error('Detalles del error:', uploadError);
           Alert.alert('Advertencia', 'No se pudo subir la imagen, pero se guardará la factura sin ella');
         }
       }
@@ -95,7 +97,7 @@ export default function NuevaFacturaScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {loading && proyectos.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2196F3" />
@@ -104,7 +106,7 @@ export default function NuevaFacturaScreen({ navigation }) {
       ) : (
         <FormularioFactura onSubmit={handleSubmit} proyectos={proyectos} />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, TextInput, Text, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TextInput, Text, Alert, SafeAreaView } from 'react-native';
 import { FAB, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TarjetaFactura from '../components/TarjetaFactura';
 import FiltroProyectos from '../components/FiltroProyectos';
 import apiService from '../services/apiService';
+import { colors } from '../theme/colors';
 
 export default function ListaFacturasScreen({ navigation }) {
   const [facturas, setFacturas] = useState([]);
@@ -75,84 +76,82 @@ export default function ListaFacturasScreen({ navigation }) {
         fechaCreacion: item.fecha,
         estado: item.estado || 'pendiente',
       }}
-      onPress={() => {
-        try {
-          navigation.navigate('DetalleFactura', { factura: item });
-        } catch (error) {
-          console.log('Error navegando:', error);
-          // Intentar navegar al padre
-          navigation.getParent()?.navigate('DetalleFactura', { factura: item });
-        }
-      }}
+      onPress={() => navigation.navigate('DetalleFactura', { factura: item })}
     />
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
-          <TextInput
-            placeholder="Buscar facturas..."
-            onChangeText={setBusqueda}
-            value={busqueda}
-            style={styles.searchInput}
-          />
-          {busqueda.length > 0 && (
-            <MaterialCommunityIcons 
-              name="close" 
-              size={20} 
-              color="#666" 
-              onPress={() => setBusqueda('')}
-              style={styles.clearIcon}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
+            <TextInput
+              placeholder="Buscar facturas..."
+              onChangeText={setBusqueda}
+              value={busqueda}
+              style={styles.searchInput}
             />
-          )}
+            {busqueda.length > 0 && (
+              <MaterialCommunityIcons 
+                name="close" 
+                size={20} 
+                color="#666" 
+                onPress={() => setBusqueda('')}
+                style={styles.clearIcon}
+              />
+            )}
+          </View>
         </View>
-      </View>
 
-      <FiltroProyectos
-        proyectos={proyectos}
-        proyectoSeleccionado={proyectoSeleccionado}
-        onSeleccionar={setProyectoSeleccionado}
-      />
-
-      {loading && facturas.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2196F3" />
-          <Text style={styles.loadingText}>Cargando facturas...</Text>
-        </View>
-      ) : facturasFiltradas.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {facturas.length === 0 
-              ? 'No hay facturas aún.\n¡Crea tu primera factura!'
-              : 'No se encontraron facturas'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={facturasFiltradas}
-          renderItem={renderFactura}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          refreshing={loading}
-          onRefresh={cargarDatos}
+        <FiltroProyectos
+          proyectos={proyectos}
+          proyectoSeleccionado={proyectoSeleccionado}
+          onSeleccionar={setProyectoSeleccionado}
         />
-      )}
 
-      <FAB
-        style={styles.fab}
-        icon="plus"
-        onPress={() => navigation.navigate('NuevaFactura')}
-      />
-    </View>
+        {loading && facturas.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#2196F3" />
+            <Text style={styles.loadingText}>Cargando facturas...</Text>
+          </View>
+        ) : facturasFiltradas.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {facturas.length === 0 
+                ? 'No hay facturas aún.\n¡Crea tu primera factura!'
+                : 'No se encontraron facturas'}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={facturasFiltradas}
+            renderItem={renderFactura}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            refreshing={loading}
+            onRefresh={cargarDatos}
+          />
+        )}
+
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => navigation.navigate('NuevaFactura')}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -162,19 +161,23 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundCard,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderRadius: 12,
     paddingHorizontal: 12,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   searchIcon: {
     marginRight: 8,
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#333',
+    color: colors.text,
   },
   clearIcon: {
     padding: 4,
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   fab: {
@@ -207,6 +210,6 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
   },
 });
