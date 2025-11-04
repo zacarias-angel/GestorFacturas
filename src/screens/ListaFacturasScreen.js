@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, TextInput, Text } from 'react-native';
-import { FAB } from 'react-native-paper';
+import { View, StyleSheet, FlatList, TextInput, Text, Alert } from 'react-native';
+import { FAB, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TarjetaFactura from '../components/TarjetaFactura';
 import FiltroProyectos from '../components/FiltroProyectos';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiService from '../services/apiService';
 
 export default function ListaFacturasScreen({ navigation }) {
   const [facturas, setFacturas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -24,41 +25,65 @@ export default function ListaFacturasScreen({ navigation }) {
 
   const cargarDatos = async () => {
     try {
-      const facturasData = await AsyncStorage.getItem('@gestorFactura:facturas');
-      const proyectosData = await AsyncStorage.getItem('@gestorFactura:proyectos');
+      setLoading(true);
       
-      if (facturasData) {
-        const facturasObj = JSON.parse(facturasData);
-        const facturasArray = Object.values(facturasObj);
-        setFacturas(facturasArray);
+      // Cargar proyectos
+      const proyectosData = await apiService.proyectos.obtenerTodos();
+      setProyectos(proyectosData);
+      
+      // Cargar facturas según filtro
+      let facturasData;
+      if (proyectoSeleccionado) {
+        facturasData = await apiService.facturas.obtenerPorProyecto(proyectoSeleccionado);
+      } else {
+        facturasData = await apiService.facturas.obtenerTodas();
       }
       
-      if (proyectosData) {
-        const proyectosObj = JSON.parse(proyectosData);
-        const proyectosArray = Object.values(proyectosObj);
-        setProyectos(proyectosArray);
-      }
+      setFacturas(facturasData);
     } catch (error) {
       console.error('Error al cargar datos:', error);
+      Alert.alert('Error', 'No se pudieron cargar los datos. Verifica la conexión.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const facturasFiltradas = facturas.filter(factura => {
-    const coincideProyecto = proyectoSeleccionado 
-      ? factura.proyectoId === proyectoSeleccionado 
-      : true;
-    
-    const coincideBusqueda = busqueda
-      ? factura.descripcion.toLowerCase().includes(busqueda.toLowerCase())
-      : true;
-    
-    return coincideProyecto && coincideBusqueda;
-  });
+  // Recargar cuando cambie el filtro de proyecto
+  useEffect(() => {
+    if (proyectos.length > 0) {
+      cargarDatos();
+    }
+  }, [proyectoSeleccionado]);
+
+  const facturasFiltradas = busqueda
+    ? facturas.filter(factura =>
+        (factura.concepto || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (factura.proveedor || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (factura.numero_factura || '').toLowerCase().includes(busqueda.toLowerCase())
+      )
+    : facturas;
 
   const renderFactura = ({ item }) => (
     <TarjetaFactura
-      factura={item}
-      onPress={() => {}}
+      factura={{
+        ...item,
+        precioTotal: parseFloat(item.monto || 0),
+        montoExtra: 0,
+        descripcion: item.concepto,
+        proyectoNombre: item.proyecto_nombre || 'Sin proyecto',
+        proyectoColor: item.proyecto_color || '#999',
+        fechaCreacion: item.fecha,
+        estado: item.estado || 'pendiente',
+      }}
+      onPress={() => {
+        try {
+          navigation.navigate('DetalleFactura', { factura: item });
+        } catch (error) {
+          console.log('Error navegando:', error);
+          // Intentar navegar al padre
+          navigation.getParent()?.navigate('DetalleFactura', { factura: item });
+        }
+      }}
     />
   );
 
@@ -91,7 +116,12 @@ export default function ListaFacturasScreen({ navigation }) {
         onSeleccionar={setProyectoSeleccionado}
       />
 
-      {facturasFiltradas.length === 0 ? (
+      {loading && facturas.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Cargando facturas...</Text>
+        </View>
+      ) : facturasFiltradas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
             {facturas.length === 0 
@@ -103,8 +133,10 @@ export default function ListaFacturasScreen({ navigation }) {
         <FlatList
           data={facturasFiltradas}
           renderItem={renderFactura}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.listContent}
+          refreshing={loading}
+          onRefresh={cargarDatos}
         />
       )}
 
@@ -121,6 +153,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
   },
   searchContainer: {
     padding: 16,

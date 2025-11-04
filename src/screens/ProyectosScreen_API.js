@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput, Linking } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput } from 'react-native';
 import { FAB, Card, Button, ActivityIndicator } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { coloresProyecto } from '../models/Proyecto';
 import apiService from '../services/apiService';
 
@@ -116,38 +115,6 @@ export default function ProyectosScreen({ navigation }) {
   };
 
   /**
-   * Descarga las facturas de un proyecto en Excel
-   */
-  const descargarExcelProyecto = async (proyecto) => {
-    try {
-      setLoading(true);
-      
-      // Genera la URL de exportación
-      const urlExcel = await apiService.exportar.exportarFacturas({
-        proyecto: proyecto.id,
-      });
-
-      // Verifica si se puede abrir la URL
-      const supported = await Linking.canOpenURL(urlExcel);
-
-      if (supported) {
-        await Linking.openURL(urlExcel);
-        Alert.alert(
-          'Descarga iniciada',
-          `Se abrirá el navegador para descargar las facturas del proyecto "${proyecto.nombre}"`
-        );
-      } else {
-        Alert.alert('Error', 'No se puede abrir la URL de descarga');
-      }
-    } catch (error) {
-      console.error('Error al descargar Excel:', error);
-      Alert.alert('Error', error.message || 'No se pudo generar el archivo Excel');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
    * Renderiza una tarjeta de proyecto
    */
   const renderProyecto = ({ item }) => (
@@ -173,20 +140,6 @@ export default function ProyectosScreen({ navigation }) {
             </Text>
           </View>
         </View>
-
-        {/* Botón de descarga de Excel */}
-        {(item.cantidad_facturas || 0) > 0 && (
-          <Button
-            mode="outlined"
-            onPress={() => descargarExcelProyecto(item)}
-            disabled={loading}
-            icon="microsoft-excel"
-            style={styles.downloadButton}
-            compact
-          >
-            Descargar Excel
-          </Button>
-        )}
 
         <Text style={styles.hint}>Mantén presionado para eliminar</Text>
       </Card.Content>
@@ -359,10 +312,6 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 8,
     fontStyle: 'italic',
-  },
-  downloadButton: {
-    marginTop: 12,
-    borderColor: '#217346',
   },
   emptyContainer: {
     flex: 1,

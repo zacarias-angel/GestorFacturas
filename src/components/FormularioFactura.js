@@ -8,6 +8,15 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
   // Asegurar que proyectos sea un array
   const listaProyectos = Array.isArray(proyectos) ? proyectos : [];
   
+  const [numeroFactura, setNumeroFactura] = useState(
+    facturaInicial?.numeroFactura || ''
+  );
+  const [fecha, setFecha] = useState(
+    facturaInicial?.fecha || new Date().toISOString().split('T')[0]
+  );
+  const [proveedor, setProveedor] = useState(
+    facturaInicial?.proveedor || ''
+  );
   const [precioTotal, setPrecioTotal] = useState(
     facturaInicial?.precioTotal?.toString() || ''
   );
@@ -16,6 +25,9 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
   );
   const [descripcion, setDescripcion] = useState(
     facturaInicial?.descripcion || ''
+  );
+  const [notas, setNotas] = useState(
+    facturaInicial?.notas || ''
   );
   const [proyectoId, setProyectoId] = useState(
     facturaInicial?.proyectoId || ''
@@ -29,6 +41,14 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
   const validarFormulario = () => {
     const nuevosErrores = {};
 
+    if (!numeroFactura || numeroFactura.trim().length < 1) {
+      nuevosErrores.numeroFactura = 'El número de factura es requerido';
+    }
+
+    if (!proveedor || proveedor.trim().length < 3) {
+      nuevosErrores.proveedor = 'El proveedor debe tener al menos 3 caracteres';
+    }
+
     if (!precioTotal || parseFloat(precioTotal) <= 0) {
       nuevosErrores.precioTotal = 'El precio total debe ser mayor a 0';
     }
@@ -40,11 +60,6 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
     if (!descripcion || descripcion.trim().length < 5) {
       nuevosErrores.descripcion = 'La descripción debe tener al menos 5 caracteres';
     }
-
-    // Proyecto ahora es opcional
-    // if (!proyectoId) {
-    //   nuevosErrores.proyectoId = 'Debe seleccionar un proyecto';
-    // }
 
     if (!imagenUri) {
       nuevosErrores.imagen = 'Debe capturar o seleccionar una imagen';
@@ -65,9 +80,13 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
       const proyectoSeleccionado = listaProyectos.find(p => p.id === proyectoId);
       
       const datosFactura = {
+        numeroFactura: numeroFactura.trim(),
+        fecha: fecha,
+        proveedor: proveedor.trim(),
         precioTotal: parseFloat(precioTotal),
         montoExtra: parseFloat(montoExtra) || 0,
         descripcion: descripcion.trim(),
+        notas: notas.trim(),
         proyectoId: proyectoId || null,
         proyectoNombre: proyectoSeleccionado?.nombre || 'Sin proyecto',
         proyectoColor: proyectoSeleccionado?.color || '#999',
@@ -96,6 +115,45 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
           <Text style={styles.titulo}>
             {facturaInicial ? 'Editar Factura' : 'Nueva Factura'}
           </Text>
+
+          {/* Número de Factura */}
+          <View style={styles.campoContainer}>
+            <Text style={styles.label}>Número de Factura *</Text>
+            <TextInput
+              style={[styles.input, errores.numeroFactura && styles.inputError]}
+              value={numeroFactura}
+              onChangeText={setNumeroFactura}
+              placeholder="Ej: 001-001-0001234"
+            />
+            {errores.numeroFactura && (
+              <Text style={styles.textoError}>{errores.numeroFactura}</Text>
+            )}
+          </View>
+
+          {/* Fecha */}
+          <View style={styles.campoContainer}>
+            <Text style={styles.label}>Fecha *</Text>
+            <TextInput
+              style={styles.input}
+              value={fecha}
+              onChangeText={setFecha}
+              placeholder="YYYY-MM-DD"
+            />
+          </View>
+
+          {/* Proveedor */}
+          <View style={styles.campoContainer}>
+            <Text style={styles.label}>Proveedor *</Text>
+            <TextInput
+              style={[styles.input, errores.proveedor && styles.inputError]}
+              value={proveedor}
+              onChangeText={setProveedor}
+              placeholder="Nombre del proveedor"
+            />
+            {errores.proveedor && (
+              <Text style={styles.textoError}>{errores.proveedor}</Text>
+            )}
+          </View>
 
           {/* Precio Total */}
           <View style={styles.campoContainer}>
@@ -150,6 +208,19 @@ const FormularioFactura = ({ onSubmit, facturaInicial = null, proyectos = [] }) 
             {errores.descripcion && (
               <Text style={styles.textoError}>{errores.descripcion}</Text>
             )}
+          </View>
+
+          {/* Notas adicionales */}
+          <View style={styles.campoContainer}>
+            <Text style={styles.label}>Notas adicionales</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={notas}
+              onChangeText={setNotas}
+              placeholder="Notas opcionales..."
+              multiline
+              numberOfLines={2}
+            />
           </View>
 
           {/* Selector de Proyecto */}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, Text } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import FormularioFactura from '../components/FormularioFactura';
+import apiService from '../services/apiService';
 
 export default function NuevaFacturaScreen({ navigation }) {
   const [proyectos, setProyectos] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     cargarProyectos();
@@ -22,56 +23,104 @@ export default function NuevaFacturaScreen({ navigation }) {
 
   const cargarProyectos = async () => {
     try {
-      const data = await AsyncStorage.getItem('@gestorFactura:proyectos');
-      if (data) {
-        const proyectosObj = JSON.parse(data);
-        const proyectosArray = Object.values(proyectosObj);
-        setProyectos(proyectosArray);
-      }
+      setLoading(true);
+      const proyectosData = await apiService.proyectos.obtenerTodos();
+      setProyectos(proyectosData);
     } catch (error) {
       console.error('Error al cargar proyectos:', error);
+      Alert.alert(
+        'Error',
+        'No se pudieron cargar los proyectos. Verifica la conexión.',
+        [
+          { text: 'Reintentar', onPress: () => cargarProyectos() },
+          { text: 'Continuar sin proyectos', style: 'cancel' },
+        ]
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (datosFactura) => {
     try {
-      const factura = {
-        id: `factura-${Date.now()}`,
-        ...datosFactura,
-        pdfUri: '',
-        fechaCreacion: new Date().toISOString(),
-        fechaModificacion: new Date().toISOString(),
+      setLoading(true);
+
+      let imagenUrl = null;
+      
+      // Si hay una imagen, subirla primero al servidor
+      if (datosFactura.imagenUri && datosFactura.imagenUri.startsWith('file://')) {
+        try {
+          console.log('Subiendo imagen al servidor...');
+          imagenUrl = await apiService.upload.subirImagen(datosFactura.imagenUri);
+          console.log('Imagen subida:', imagenUrl);
+        } catch (uploadError) {
+          console.error('Error al subir imagen:', uploadError);
+          Alert.alert('Advertencia', 'No se pudo subir la imagen, pero se guardará la factura sin ella');
+        }
+      }
+
+      // Preparar datos para el backend
+      const nuevaFactura = {
+        numero_factura: datosFactura.numeroFactura,
+        fecha: datosFactura.fecha || new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        proveedor: datosFactura.proveedor,
+        concepto: datosFactura.descripcion,
+        monto: parseFloat(datosFactura.precioTotal || 0) + parseFloat(datosFactura.montoExtra || 0),
+        proyecto_id: datosFactura.proyectoId || null,
+        imagen_uri: imagenUrl || datosFactura.imagenUri || null,
+        notas: datosFactura.notas || null,
         estado: 'pendiente',
       };
 
-      const facturasData = await AsyncStorage.getItem('@gestorFactura:facturas');
-      const facturasObj = facturasData ? JSON.parse(facturasData) : {};
-      facturasObj[factura.id] = factura;
-      await AsyncStorage.setItem('@gestorFactura:facturas', JSON.stringify(facturasObj));
+      console.log('Enviando factura:', nuevaFactura);
 
-      // Solo actualizar proyecto si hay uno seleccionado
-      if (factura.proyectoId) {
-        const proyectosData = await AsyncStorage.getItem('@gestorFactura:proyectos');
-        if (proyectosData) {
-          const proyectosObj = JSON.parse(proyectosData);
-          if (proyectosObj[factura.proyectoId]) {
-            proyectosObj[factura.proyectoId].cantidadFacturas += 1;
-            proyectosObj[factura.proyectoId].montoTotal += factura.precioTotal + factura.montoExtra;
-            await AsyncStorage.setItem('@gestorFactura:proyectos', JSON.stringify(proyectosObj));
-          }
-        }
-      }
+      // Enviar al backend
+      const resultado = await apiService.facturas.crear(nuevaFactura);
+      
+      console.log('Factura creada:', resultado);
 
       Alert.alert('Éxito', 'Factura guardada correctamente', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error('Error al guardar factura:', error);
-      Alert.alert('Error', 'No se pudo guardar la factura');
+      console.error('Error completo:', JSON.stringify(error));
+      Alert.alert(
+        'Error', 
+        `No se pudo guardar la factura.\n\nDetalles: ${error.message}\n\nStatus: ${error.status}`
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  return <FormularioFactura onSubmit={handleSubmit} proyectos={proyectos} />;
+  return (
+    <View style={styles.container}>
+      {loading && proyectos.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Cargando proyectos...</Text>
+        </View>
+      ) : (
+        <FormularioFactura onSubmit={handleSubmit} proyectos={proyectos} />
+      )}
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+});

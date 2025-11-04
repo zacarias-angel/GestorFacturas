@@ -4,12 +4,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Importar pantallas (crear estos archivos)
-// import HomeScreen from '../screens/HomeScreen';
-// import ListaFacturasScreen from '../screens/ListaFacturasScreen';
-// import ProyectosScreen from '../screens/ProyectosScreen';
-// import NuevaFacturaScreen from '../screens/NuevaFacturaScreen';
-// import DetalleFacturaScreen from '../screens/DetalleFacturaScreen';
+// Importar pantallas
+import HomeScreen from '../screens/HomeScreen';
+import ListaFacturasScreen from '../screens/ListaFacturasScreen';
+import ProyectosScreen from '../screens/ProyectosScreen';
+import NuevaFacturaScreen from '../screens/NuevaFacturaScreen';
+import DetalleFacturaScreen from '../screens/DetalleFacturaScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,9 +37,9 @@ function MainTabs() {
         headerShown: false,
       })}
     >
-      {/* <Tab.Screen name="Home" component={HomeScreen} /> */}
-      {/* <Tab.Screen name="Facturas" component={ListaFacturasScreen} /> */}
-      {/* <Tab.Screen name="Proyectos" component={ProyectosScreen} /> */}
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
+      <Tab.Screen name="Facturas" component={ListaFacturasScreen} options={{ title: 'Mis Facturas' }} />
+      <Tab.Screen name="Proyectos" component={ProyectosScreen} options={{ title: 'Proyectos' }} />
     </Tab.Navigator>
   );
 }
@@ -64,21 +64,21 @@ export default function AppNavigator() {
           component={MainTabs}
           options={{ headerShown: false }}
         />
-        {/* <Stack.Screen
+        <Stack.Screen
           name="NuevaFactura"
           component={NuevaFacturaScreen}
           options={{
             title: 'Nueva Factura',
             presentation: 'modal',
           }}
-        /> */}
-        {/* <Stack.Screen
+        />
+        <Stack.Screen
           name="DetalleFactura"
           component={DetalleFacturaScreen}
           options={{
             title: 'Detalle de Factura',
           }}
-        /> */}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

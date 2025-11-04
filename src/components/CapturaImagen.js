@@ -6,10 +6,10 @@ import * as ImagePicker from 'expo-image-picker';
 const CapturaImagen = ({ onImagenCapturada, imagenInicial = null }) => {
   const [imagenUri, setImagenUri] = useState(imagenInicial);
 
-  const handleCapturarCamara = async () => {
+  const tomarFoto = async () => {
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -25,10 +25,10 @@ const CapturaImagen = ({ onImagenCapturada, imagenInicial = null }) => {
     }
   };
 
-  const handleSeleccionarGaleria = async () => {
+  const seleccionarImagen = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -67,8 +67,8 @@ const CapturaImagen = ({ onImagenCapturada, imagenInicial = null }) => {
       'Seleccionar imagen',
       'Elige una opción',
       [
-        { text: 'Tomar foto', onPress: handleCapturarCamara },
-        { text: 'Elegir de galería', onPress: handleSeleccionarGaleria },
+        { text: 'Tomar foto', onPress: tomarFoto },
+        { text: 'Elegir de galería', onPress: seleccionarImagen },
         { text: 'Cancelar', style: 'cancel' },
       ]
     );
