@@ -472,6 +472,28 @@ export const exportarAPI = {
   },
 
   /**
+   * Exportar facturas a CSV
+   * @param {Object} opciones - Opciones de filtro
+   * @returns {Promise<string>} URL del archivo generado
+   */
+  exportarFacturasCSV: async (opciones = {}) => {
+    try {
+      const params = new URLSearchParams({
+        type: 'facturas',
+        ...opciones,
+      });
+      
+      const url = `${API_CONFIG.BASE_URL}/export-csv.php?${params.toString()}`;
+      
+      // Esta URL debe abrirse en el navegador para descargar el archivo
+      return url;
+    } catch (error) {
+      console.error('Error al generar URL de exportación CSV de facturas:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Exportar proyectos a Excel
    * @returns {Promise<string>} URL del archivo generado
    */
@@ -483,6 +505,22 @@ export const exportarAPI = {
       return url;
     } catch (error) {
       console.error('Error al generar URL de exportación de proyectos:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Exportar proyectos a CSV
+   * @returns {Promise<string>} URL del archivo generado
+   */
+  exportarProyectosCSV: async () => {
+    try {
+      const url = `${API_CONFIG.BASE_URL}/export-csv.php?type=proyectos`;
+      
+      // Esta URL debe abrirse en el navegador para descargar el archivo
+      return url;
+    } catch (error) {
+      console.error('Error al generar URL de exportación CSV de proyectos:', error);
       throw error;
     }
   },

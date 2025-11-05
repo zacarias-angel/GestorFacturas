@@ -62,25 +62,7 @@ export default function HomeScreen({ navigation }) {
         </Card>
       </View>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>Características</Text>
-        <View style={styles.featureItem}>
-          <MaterialCommunityIcons name="check-circle" size={24} color={colors.success} />
-          <Text style={styles.featureText}>Captura de facturas con cámara</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <MaterialCommunityIcons name="check-circle" size={24} color={colors.success} />
-          <Text style={styles.featureText}>Organización por proyectos</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <MaterialCommunityIcons name="check-circle" size={24} color={colors.success} />
-          <Text style={styles.featureText}>Filtrado y búsqueda rápida</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <MaterialCommunityIcons name="check-circle" size={24} color={colors.success} />
-          <Text style={styles.featureText}>Almacenamiento en la nube</Text>
-        </View>
-      </View>
+      
       {/* Espacio adicional al final */}
       <View style={{ height: 20 }} />
     </ScrollView>

@@ -7,22 +7,24 @@ import FiltroProyectos from '../components/FiltroProyectos';
 import apiService from '../services/apiService';
 import { colors } from '../theme/colors';
 
-export default function ListaFacturasScreen({ navigation }) {
+export default function ListaFacturasScreen({ navigation, route }) {
   const [facturas, setFacturas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
+  // Si viene un proyecto desde los params, establecerlo como seleccionado
   useEffect(() => {
-    cargarDatos();
-    
-    const unsubscribe = navigation.addListener('focus', () => {
-      cargarDatos();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
+    if (route?.params?.proyectoId) {
+      setProyectoSeleccionado(route.params.proyectoId);
+      // Limpiar el parámetro para que no se mantenga en futuras navegaciones
+      navigation.setParams({ proyectoId: undefined, proyectoNombre: undefined });
+    }
+    // Después de establecer el proyecto, marcar que ya se hizo la carga inicial
+    setInitialLoad(false);
+  }, [route?.params?.proyectoId]);
 
   const cargarDatos = async () => {
     try {
@@ -49,12 +51,23 @@ export default function ListaFacturasScreen({ navigation }) {
     }
   };
 
-  // Recargar cuando cambie el filtro de proyecto
+  // Cargar datos cuando la pantalla recibe foco (después de la carga inicial)
   useEffect(() => {
-    if (proyectos.length > 0) {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!initialLoad) {
+        cargarDatos();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, initialLoad, proyectoSeleccionado]);
+
+  // Cargar datos cuando cambie el proyecto seleccionado o termine la carga inicial
+  useEffect(() => {
+    if (!initialLoad) {
       cargarDatos();
     }
-  }, [proyectoSeleccionado]);
+  }, [proyectoSeleccionado, initialLoad]);
 
   const facturasFiltradas = busqueda
     ? facturas.filter(factura =>
@@ -110,17 +123,26 @@ export default function ListaFacturasScreen({ navigation }) {
           onSeleccionar={setProyectoSeleccionado}
         />
 
-        {loading && facturas.length === 0 ? (
+        {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2196F3" />
-            <Text style={styles.loadingText}>Cargando facturas...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>
+              {proyectoSeleccionado 
+                ? 'Filtrando facturas del proyecto...' 
+                : 'Cargando facturas...'}
+            </Text>
           </View>
         ) : facturasFiltradas.length === 0 ? (
           <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons 
+              name={facturas.length === 0 ? "file-document-outline" : "filter-off"} 
+              size={64} 
+              color={colors.textSecondary} 
+            />
             <Text style={styles.emptyText}>
               {facturas.length === 0 
                 ? 'No hay facturas aún.\n¡Crea tu primera factura!'
-                : 'No se encontraron facturas'}
+                : 'No se encontraron facturas con este filtro'}
             </Text>
           </View>
         ) : (
@@ -129,7 +151,7 @@ export default function ListaFacturasScreen({ navigation }) {
             renderItem={renderFactura}
             keyExtractor={item => item.id.toString()}
             contentContainerStyle={styles.listContent}
-            refreshing={loading}
+            refreshing={false}
             onRefresh={cargarDatos}
           />
         )}
@@ -157,11 +179,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
     color: colors.textSecondary,
+    fontWeight: '500',
   },
   searchContainer: {
     padding: 16,
@@ -199,11 +223,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
+    backgroundColor: colors.background,
   },
   emptyText: {
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 24,
   },
   fab: {
     position: 'absolute',

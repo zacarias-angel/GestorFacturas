@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput, Linking, SafeAreaView } from 'react-native';
+import { View, StyleSheet, FlatList, Alert, Text, Modal, TextInput as RNTextInput, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FAB, Card, Button, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { coloresProyecto } from '../models/Proyecto';
 import apiService from '../services/apiService';
+import { colors } from '../theme/colors';
 
 export default function ProyectosScreen({ navigation }) {
   const [proyectos, setProyectos] = useState([]);
@@ -116,32 +118,64 @@ export default function ProyectosScreen({ navigation }) {
   };
 
   /**
-   * Descarga las facturas de un proyecto en Excel
+   * Descarga las facturas de un proyecto en Excel o CSV
    */
   const descargarExcelProyecto = async (proyecto) => {
+    // Mostrar opciones de formato
+    Alert.alert(
+      'Exportar Facturas',
+      `Selecciona el formato para exportar las facturas de "${proyecto.nombre}"`,
+      [
+        {
+          text: 'Excel (.xlsx)',
+          onPress: () => descargarArchivo(proyecto, 'excel'),
+        },
+        {
+          text: 'CSV (.csv)',
+          onPress: () => descargarArchivo(proyecto, 'csv'),
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  /**
+   * Descarga el archivo en el formato especificado
+   */
+  const descargarArchivo = async (proyecto, formato) => {
     try {
       setLoading(true);
       
-      // Genera la URL de exportación
-      const urlExcel = await apiService.exportar.exportarFacturas({
-        proyecto: proyecto.id,
-      });
+      // Genera la URL de exportación según el formato
+      let urlDescarga;
+      if (formato === 'csv') {
+        urlDescarga = await apiService.exportar.exportarFacturasCSV({
+          proyecto: proyecto.id,
+        });
+      } else {
+        urlDescarga = await apiService.exportar.exportarFacturas({
+          proyecto: proyecto.id,
+        });
+      }
 
       // Verifica si se puede abrir la URL
-      const supported = await Linking.canOpenURL(urlExcel);
+      const supported = await Linking.canOpenURL(urlDescarga);
 
       if (supported) {
-        await Linking.openURL(urlExcel);
+        await Linking.openURL(urlDescarga);
         Alert.alert(
           'Descarga iniciada',
-          `Se abrirá el navegador para descargar las facturas del proyecto "${proyecto.nombre}"`
+          `Se abrirá el navegador para descargar las facturas del proyecto "${proyecto.nombre}" en formato ${formato.toUpperCase()}`
         );
       } else {
         Alert.alert('Error', 'No se puede abrir la URL de descarga');
       }
     } catch (error) {
-      console.error('Error al descargar Excel:', error);
-      Alert.alert('Error', error.message || 'No se pudo generar el archivo Excel');
+      console.error('Error al descargar archivo:', error);
+      Alert.alert('Error', error.message || 'No se pudo generar el archivo');
     } finally {
       setLoading(false);
     }
@@ -153,6 +187,13 @@ export default function ProyectosScreen({ navigation }) {
   const renderProyecto = ({ item }) => (
     <Card 
       style={[styles.card, { borderLeftColor: item.color, borderLeftWidth: 8 }]}
+      onPress={() => {
+        // Navegar a la pantalla de Facturas con el proyecto preseleccionado
+        navigation.navigate('Facturas', {
+          screen: 'ListaFacturas',
+          params: { proyectoId: item.id, proyectoNombre: item.nombre }
+        });
+      }}
       onLongPress={() => eliminarProyecto(item)}
     >
       <Card.Content>
@@ -178,7 +219,10 @@ export default function ProyectosScreen({ navigation }) {
         {(item.cantidad_facturas || 0) > 0 && (
           <Button
             mode="outlined"
-            onPress={() => descargarExcelProyecto(item)}
+            onPress={(e) => {
+              e.stopPropagation();
+              descargarExcelProyecto(item);
+            }}
             disabled={loading}
             icon="microsoft-excel"
             style={styles.downloadButton}
@@ -188,7 +232,7 @@ export default function ProyectosScreen({ navigation }) {
           </Button>
         )}
 
-        <Text style={styles.hint}>Mantén presionado para eliminar</Text>
+        <Text style={styles.hint}>Toca para ver facturas • Mantén presionado para eliminar</Text>
       </Card.Content>
     </Card>
   );
@@ -305,22 +349,22 @@ export default function ProyectosScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
   },
   listContent: {
     padding: 16,
@@ -333,7 +377,7 @@ const styles = StyleSheet.create({
   proyectoTitulo: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffffff',
     marginBottom: 4,
   },
   proyectoDescripcion: {
